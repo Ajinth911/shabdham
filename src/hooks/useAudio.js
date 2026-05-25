@@ -17,7 +17,7 @@ export function useAudio() {
   const [activeSubtitle, setActiveSubtitle] = useState(null);
 
   const audioEl = useRef(null);
-  const clipStopTimer = useRef(null);
+  const hasStartedRef = useRef(false);
   const isMutedRef = useRef(false);
 
   // Web Audio API — ambient only
@@ -37,6 +37,25 @@ export function useAudio() {
       el.volume = 1;
       // Load it silently so it's buffered and ready
       el.load();
+
+      // Listen to timeupdate to update active subtitle dynamically in sync with the playhead!
+      el.addEventListener('timeupdate', () => {
+        const time = el.currentTime;
+        const currentSection = subtitleData.sections.find(
+          (section) =>
+            time >= section.startTime &&
+            (section.endTime === null || section.endTime === undefined || time < section.endTime)
+        );
+        if (currentSection) {
+          setActiveSubtitle({
+            tamil: currentSection.tamil,
+            romanized: currentSection.romanized,
+          });
+        } else {
+          setActiveSubtitle(null);
+        }
+      });
+
       audioEl.current = el;
     }
 
@@ -76,54 +95,19 @@ export function useAudio() {
   }, []);
 
   /**
-   * Sync voice playhead and active subtitle continuously with scroll progress.
-   * Automatically starts audio when scrolling occurs and pauses after scrolling stops.
+   * Triggers the continuous full voice audio to play once the user starts scrolling.
    */
   const syncVoiceWithScroll = useCallback((progress) => {
     if (!audioEl.current) return;
     const el = audioEl.current;
 
-    // Wait until metadata has loaded and duration is known
-    if (!el.duration || isNaN(el.duration)) return;
-
-    // Map scroll progress (0.0 to 1.0) directly to the audio track duration
-    const targetTime = Math.max(0, Math.min(progress * el.duration, el.duration));
-
-    // Seek to the calculated target time
-    el.currentTime = targetTime;
-
-    // Play if paused (and not muted)
-    if (el.paused && !isMutedRef.current) {
+    // If progress is greater than a small threshold and we haven't started playing yet, play the full audio!
+    if (progress > 0.01 && !hasStartedRef.current) {
+      hasStartedRef.current = true;
       el.play().catch((err) => {
-        console.warn('[useAudio] play() failed during scroll sync:', err);
+        console.warn('[useAudio] play() failed to start full audio:', err);
       });
     }
-
-    // Identify and display the correct subtitle matching this playhead timestamp
-    const currentSection = subtitleData.sections.find(
-      (section) =>
-        targetTime >= section.startTime &&
-        (section.endTime === null || section.endTime === undefined || targetTime < section.endTime)
-    );
-
-    if (currentSection) {
-      setActiveSubtitle({
-        tamil: currentSection.tamil,
-        romanized: currentSection.romanized,
-      });
-    } else {
-      setActiveSubtitle(null);
-    }
-
-    // Reset the pause timeout: if no new scroll event is received in 150ms, pause the audio
-    if (clipStopTimer.current) {
-      clearTimeout(clipStopTimer.current);
-    }
-    clipStopTimer.current = setTimeout(() => {
-      if (audioEl.current && !audioEl.current.paused) {
-        audioEl.current.pause();
-      }
-    }, 150);
   }, []);
 
   /**
