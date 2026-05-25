@@ -1,0 +1,40 @@
+{
+  "sections": [
+    {
+      "id": "s1",
+      "trigger": 0.12,
+      "startTime": 0,
+      "endTime": 0.25,
+      "tamil": "வணக்கம்… நான் தான் சப்தம்…",
+      "romanized": "Vanakkam… naan thaan Shabdam…",
+      "duration": 250
+    },
+    {
+      "id": "s2",
+      "trigger": 0.42,
+      "startTime": 2,
+      "endTime": 7,
+      "tamil": "உங்கள் குரல்… எனக்கு புரியும்…",
+      "romanized": "Ungal kural… enakku puriyum…",
+      "duration": 5000
+    },
+    {
+      "id": "s3",
+      "trigger": 0.67,
+      "startTime": 7,
+      "endTime": 14,
+      "tamil": "இது ஒரு புதிய அனுபவம்…",
+      "romanized": "Idhu oru puthiya anubavam…",
+      "duration": 7000
+    },
+    {
+      "id": "s4",
+      "trigger": 0.88,
+      "startTime": 14,
+      "endTime": null,
+      "tamil": "வாங்க… சேர்ந்து பேசலாம்…",
+      "romanized": "Vaanga… serndhu pesaalaam…",
+      "duration": 6000
+    }
+  ]
+}

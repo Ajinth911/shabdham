@@ -1,0 +1,90 @@
+#landing-content-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  padding: 0 10vw;
+  box-sizing: border-box;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 45%, rgba(0, 0, 0, 0) 85%);
+  transition: background 0.5s ease;
+}
+
+.landing-inner {
+  position: relative;
+  width: 100%;
+  max-width: 750px;
+  height: 500px;
+}
+
+.landing-slide {
+  position: absolute;
+  top: 50%;
+  transform-origin: left center;
+  translate: 0 -50%;
+  left: 0;
+  width: 100%;
+  transition: opacity 0.25s cubic-bezier(0.25, 1, 0.5, 1), transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slide-kicker {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 600;
+  color: #00D4FF;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+}
+
+.slide-heading {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  color: #ffffff;
+  margin: 0 0 20px 0;
+  line-height: 1.1;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+
+.slide-heading.shabdham {
+  font-size: clamp(54px, 7vw, 92px);
+  letter-spacing: 0.22em;
+}
+
+.slide-heading.standard {
+  font-size: clamp(42px, 5.5vw, 76px);
+  letter-spacing: -0.01em;
+}
+
+.slide-subheading {
+  font-family: 'Noto Sans Tamil', serif;
+  font-size: clamp(32px, 4.5vw, 56px);
+  font-weight: 300;
+  color: #00D4FF;
+  margin: 0 0 24px 0;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+}
+
+.slide-description {
+  font-size: clamp(19px, 2.2vw, 26px);
+  font-weight: 300;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.slide-description.tamil-font {
+  font-family: 'Noto Sans Tamil', serif;
+}
+
+.slide-description.garamond-font {
+  font-family: 'Cormorant Garamond', serif;
+}
