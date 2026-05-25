@@ -13,13 +13,11 @@ import shabdhamAudio from '../audio/shabdham.mp3';
  * Clips fire ONLY on scroll triggers. Each section plays ONCE per session.
  */
 export function useAudio() {
-  const playedSections = useRef(new Set());
   const [isMuted, setIsMuted] = useState(false);
   const [activeSubtitle, setActiveSubtitle] = useState(null);
 
   const audioEl = useRef(null);
   const clipStopTimer = useRef(null);
-  const subtitleTimer = useRef(null);
   const isMutedRef = useRef(false);
 
   // Web Audio API — ambient only
@@ -78,86 +76,54 @@ export function useAudio() {
   }, []);
 
   /**
-   * Check scroll progress against section triggers.
+   * Sync voice playhead and active subtitle continuously with scroll progress.
+   * Automatically starts audio when scrolling occurs and pauses after scrolling stops.
    */
-  const checkSectionTrigger = useCallback((scrollProgress) => {
-    if (isMutedRef.current) return null;
-
-    for (const section of subtitleData.sections) {
-      if (
-        !playedSections.current.has(section.id) &&
-        scrollProgress >= section.trigger &&
-        scrollProgress < section.trigger + 0.1
-      ) {
-        return section;
-      }
-    }
-    return null;
-  }, []);
-
-  /**
-   * Play the audio clip for this section and show its subtitle.
-   * Uses the <audio> element: seeks to startTime, plays, pauses at endTime.
-   */
-  const playSection = useCallback((section) => {
-    // Guard: only fire once per section
-    if (playedSections.current.has(section.id)) return;
+  const syncVoiceWithScroll = useCallback((progress) => {
     if (!audioEl.current) return;
-
-    playedSections.current.add(section.id);
-
     const el = audioEl.current;
 
-    // Cancel any running clip stop timer
+    // Wait until metadata has loaded and duration is known
+    if (!el.duration || isNaN(el.duration)) return;
+
+    // Map scroll progress (0.0 to 1.0) directly to the audio track duration
+    const targetTime = Math.max(0, Math.min(progress * el.duration, el.duration));
+
+    // Seek to the calculated target time
+    el.currentTime = targetTime;
+
+    // Play if paused (and not muted)
+    if (el.paused && !isMutedRef.current) {
+      el.play().catch((err) => {
+        console.warn('[useAudio] play() failed during scroll sync:', err);
+      });
+    }
+
+    // Identify and display the correct subtitle matching this playhead timestamp
+    const currentSection = subtitleData.sections.find(
+      (section) =>
+        targetTime >= section.startTime &&
+        (section.endTime === null || section.endTime === undefined || targetTime < section.endTime)
+    );
+
+    if (currentSection) {
+      setActiveSubtitle({
+        tamil: currentSection.tamil,
+        romanized: currentSection.romanized,
+      });
+    } else {
+      setActiveSubtitle(null);
+    }
+
+    // Reset the pause timeout: if no new scroll event is received in 150ms, pause the audio
     if (clipStopTimer.current) {
       clearTimeout(clipStopTimer.current);
-      clipStopTimer.current = null;
     }
-
-    // Seek to the clip start and play
-    el.currentTime = section.startTime;
-    el.volume = isMutedRef.current ? 0 : 1;
-
-    el.play().catch((err) => {
-      console.warn('[useAudio] play() failed:', err);
-    });
-
-    // Stop at endTime — use timeupdate for accuracy (fires every ~16ms via rAF)
-    // plus a setTimeout fallback with 200ms startup buffer
-    if (section.endTime !== null && section.endTime !== undefined) {
-      const stopAt = section.endTime;
-
-      // timeupdate listener: pauses exactly when currentTime crosses endTime
-      const onTimeUpdate = () => {
-        if (el.currentTime >= stopAt) {
-          el.pause();
-          el.removeEventListener('timeupdate', onTimeUpdate);
-          if (clipStopTimer.current) {
-            clearTimeout(clipStopTimer.current);
-            clipStopTimer.current = null;
-          }
-        }
-      };
-      el.addEventListener('timeupdate', onTimeUpdate);
-
-      // Fallback: 200ms startup buffer + clip duration
-      const clipMs = (stopAt - section.startTime) * 1000;
-      clipStopTimer.current = setTimeout(() => {
-        el.pause();
-        el.removeEventListener('timeupdate', onTimeUpdate);
-        clipStopTimer.current = null;
-      }, clipMs + 200);
-    }
-
-    // Show subtitle
-    if (subtitleTimer.current) clearTimeout(subtitleTimer.current);
-    setActiveSubtitle({ tamil: section.tamil, romanized: section.romanized });
-
-    subtitleTimer.current = setTimeout(() => {
-      setActiveSubtitle(null);
-    }, (section.duration || 3000) + 500);
-
-    return true;
+    clipStopTimer.current = setTimeout(() => {
+      if (audioEl.current && !audioEl.current.paused) {
+        audioEl.current.pause();
+      }
+    }, 150);
   }, []);
 
   /**
@@ -189,8 +155,7 @@ export function useAudio() {
   return {
     initAudio,
     startAmbient,
-    checkSectionTrigger,
-    playSection,
+    syncVoiceWithScroll,
     toggleMute,
     isMuted,
     activeSubtitle,

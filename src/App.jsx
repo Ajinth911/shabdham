@@ -36,14 +36,12 @@ export default function App() {
   const {
     initAudio,
     startAmbient,
-    checkSectionTrigger,
-    playSection,
+    syncVoiceWithScroll,
     toggleMute,
     isMuted,
     activeSubtitle,
   } = useAudio();
 
-  const lastTriggeredRef = useRef(null);
 
   // Preload all cinematic background frames
   const {
@@ -65,16 +63,11 @@ export default function App() {
     setTimeout(() => setSceneReady(true), 100);
   }, [initAudio, startAmbient]);
 
-  // Check voice triggers on scroll
+  // Sync voice with scroll progress
   useEffect(() => {
     if (!entered) return;
-
-    const section = checkSectionTrigger(progress);
-    if (section && section.id !== lastTriggeredRef.current) {
-      lastTriggeredRef.current = section.id;
-      playSection(section);
-    }
-  }, [progress, entered, checkSectionTrigger, playSection]);
+    syncVoiceWithScroll(progress);
+  }, [progress, entered, syncVoiceWithScroll]);
 
   // Pause animation when tab hidden
   useEffect(() => {
